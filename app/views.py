@@ -235,7 +235,7 @@ def attendance_record(request):
                     AttendanceRecord.objects.create(
                         student=student,
                         date=attendance_date,
-                        status='absent'  # Default status is absent
+                        status='present'  # Default status is absent
                     )
 
             # Fetch all attendance records for the date to show in the template
@@ -286,7 +286,7 @@ def manage_lecture(request):
             data = form.save(commit=False)
             data.added_by = request.user
             data.save()
-            return redirect('add_lecture')
+            return redirect('manage_lecture')
     else:
         form = LectureForm()
 
@@ -1035,8 +1035,6 @@ def exam_results_view(request):
         'total_exam': total_exam,
     })
 
-
-
 def manage_period(request):
     periods = Period.objects.all()
 
@@ -1044,17 +1042,16 @@ def manage_period(request):
         if 'delete_period' in request.POST:
             period = get_object_or_404(Period, id=request.POST.get('delete_period'))
             period.delete()
-            return redirect('manage_periods')
+            return redirect('manage_period')
         else:
             form = PeriodForm(request.POST)
             if form.is_valid():
                 form.save()
-                return redirect('manage_periods')
+                return redirect('manage_period')
     else:
         form = PeriodForm()
 
-    return render(request, 'manage_periods.html', {'form': form, 'periods': periods})
-
+    return render(request, 'manage_period.html', {'form': form, 'periods': periods})
 
 def edit_period_ajax(request):
     if request.method == 'POST':
