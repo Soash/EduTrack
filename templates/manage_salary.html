@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Generate Monthly Salary{% endblock %}
+{% block styles %}
+    <style>
+        #dataTable_filter {
+            display: none;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<div class="main">
+
+    <h2>Monthly Salaries</h2>
+    <!-- Form to generate salary -->
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" name="generate_salary" class="btn btn-primary" style="margin-bottom: 20px;">Generate Salary</button>
+    </form>
+
+
+
+    <!-- Salary Records -->
+
+    {% if monthly_salaries %}
+        <table id="dataTable" class="display">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Class</th>
+                    <th>Roll</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th>TrxID</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for salary in monthly_salaries %}
+                    <tr>
+                        <td>{{ salary.student.name }}</td>
+                        <td>{{ salary.student.grade }}</td>
+                        <td>{{ salary.student.roll }}</td>
+                        <td>{{ salary.date }}</td>
+                        <td>
+                            <form method="POST" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="salary_id" value="{{ salary.id }}">
+                                <button type="submit" name="toggle_status" class="btn btn-link" style="width: 80px;">
+                                    {{ salary.status|capfirst }}
+                                </button>
+                            </form>
+                        </td>
+                        <td>{{ salary.amount|default:"" }}</td>
+                        <td>{{ salary.trxid|default:"" }}</td>
+                        <td>
+                            <form method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this salary?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="delete_salary_id" value="{{ salary.id }}">
+                                <button type="submit" class="btn btn-danger" name="delete_salary">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No salary records found for this month.</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize DataTables
+        $('#dataTable').DataTable({
+            
+            columnDefs: [
+                {
+                    targets: [5, 6, 7], // Indexes of the 'URL' and 'Actions' columns
+                    orderable: false // Disable sorting for these columns
+                }
+            ],
+
+            initComplete: function () {
+                // Apply filtering only to the 'Grade' and 'Subject' columns
+                this.api().columns([0, 1, 2]).every(function () {
+                    var column = this;
+                    var header = $(column.header());
+                    var input = $('<input type="text" placeholder="Search ' + header.text() + '" />')
+                        .appendTo(header)
+                        .on('keyup change clear', function () {
+                            var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                            column.search(val ? '^' + val + '$' : '', true, false).draw();
+                        });
+                });
+            }
+        });
+    });
+</script>
+{% endblock  %}

@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% load tags %}  <!-- Load the custom filter -->
+{% block styles %}
+    <style>
+        .table th{
+            text-align: center;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<div class="main">
+    <h2>Routine for Class {{ grade }}</h2>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Sunday</th>
+                <th>Monday</th>
+                <th>Tuesday</th>
+                <th>Wednesday</th>
+                <th>Thursday</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for period in periods %}
+            <tr>
+                <td style="width: 100px;">Period {{ period.period_number }}</td>
+                
+                {% for day in days %}
+                <td>
+                    {% get_routine period.id day grade as routine %}
+                    
+                    <select class="teacher-select" data-routine-id="{{ routine.id }}">
+                        <option value="">Select Teacher</option>
+                        {% for teacher in teachers %}
+                            <option value="{{ teacher.id }}" 
+                                {% if routine.teacher and routine.teacher.id == teacher.id %}selected{% endif %}>
+                                {{ teacher.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+        
+                    <!-- Subject dropdown -->
+                    <select class="subject-select" data-routine-id="{{ routine.id }}">
+                        <option value="">Select Subject</option>
+                        {% for subject in subjects %}
+                            <option value="{{ subject.id }}" 
+                                {% if routine.subject and routine.subject.id == subject.id %}selected{% endif %}>
+                                {{ subject.subject }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+        
+        
+    </table>
+</div>
+{% endblock %}
+
+
+
+{% block scripts %}
+<script>
+    // Handle teacher and subject selection changes
+    document.querySelectorAll('.teacher-select, .subject-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const routineId = this.getAttribute('data-routine-id');
+            const teacherId = this.closest('td').querySelector('.teacher-select').value;
+            const subjectId = this.closest('td').querySelector('.subject-select').value;
+
+
+            const url = '/routine/update/' + routineId + '/';
+
+            console.log('Updating routine:', routineId, teacherId, subjectId);
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ teacher_id: teacherId, subject_id: subjectId })
+            })
+            .then(response => {
+                return response.text().then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        return data;
+                    } catch (error) {
+                        console.error('Error parsing JSON:', error);
+                        console.error('Response text:', text);
+                        throw error; // re-throw the error for the next catch block
+                    }
+                });
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log('Routine updated successfully');
+                } else {
+                    console.error('Error updating routine:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Students{% endblock %}
+
+{% block styles %}
+    <style>
+        #dataTable_filter {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="main">
+    <h2>Manage Students</h2>
+
+    <button id="toggleFormBtn" class="btn" style="margin-bottom: 20px;">
+        <i class="fas fa-plus"></i> Add Student
+    </button>
+
+    <div id="addForm" class="form-container" style="display: none;">
+        <form method="post" enctype="multipart/form-data" class="form">
+            <h2>Add Student</h2>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" id="closeFormBtn" class="btn btn-danger">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </form>
+    </div>
+    
+
+    <table id="dataTable" class="display">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Roll No</th>
+                <th>Class</th>
+                <th>Admission Date</th>
+                <th>Image</th>
+                <th>Added By</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr id="student-row-{{ student.id }}">
+                <td>{{ student.user.username }}</td>
+                <td>{{ student.name }}</td>
+                <td>{{ student.phone }}</td>
+                <td>{{ student.roll }}</td>
+                <td>{{ student.grade }}</td>
+                <td>{{ student.user.date_joined }}</td>
+                <td>{% if student.img %}
+                    <a href="{{ student.img.url }}" target="_blank"><img src="{{ student.img.url }}" style="width: 50px; height: 50px; object-fit:cover;"></a>
+                    {% endif %}
+                </td>
+                <td>{{ student.added_by|default:"Self Registered" }}</td>
+                <td>
+                    <button type="button" class="btn edit-btn" 
+                        data-student-id="{{ student.id }}" 
+                        data-student-name="{{ student.name }}" 
+                        data-student-phone="{{ student.phone }}">
+                    Edit</button>
+
+                    <form method="post" action="{% url 'delete_student' student.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Popup Form for Editing Students -->
+    <div id="popupForm" class="popup" style="display: none;">
+        <div class="popup-content">
+            <span id="closePopup" class="close">&times;</span>
+            <h2>Edit Student</h2>
+            <form id="popupFormElement" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" id="popup-student-id" name="student_id">
+
+                <label for="name">Name:</label>
+                <input type="text" id="popup-name" name="name" required>
+
+                <label for="phone">Phone:</label>
+                <input type="text" id="popup-phone" name="phone" required>
+
+                <label for="password">Password:</label>
+                <input type="text" id="popup-password" name="password">
+
+                <label for="img">Image:</label>
+                <input type="file" id="popup-img" name="img">
+
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Popup form management
+    const popup = document.getElementById('popupForm');
+    const closeButton = document.getElementById('closePopup');
+
+    function openPopup(event) {
+        const id = event.target.getAttribute('data-student-id');
+        const name = event.target.getAttribute('data-student-name');
+        const phone = event.target.getAttribute('data-student-phone');
+
+        document.getElementById('popup-student-id').value = id;
+        document.getElementById('popup-name').value = name;
+        document.getElementById('popup-phone').value = phone;
+
+        popup.style.display = 'block';
+    }
+
+    closeButton.onclick = function() {
+        popup.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target === popup) {
+            popup.style.display = 'none';
+        }
+    }
+
+    const editButtons = document.querySelectorAll('.edit-btn');
+    editButtons.forEach(button => {
+        button.addEventListener('click', openPopup);
+    });
+
+    // AJAX form submission for the popup edit form
+    document.getElementById('popupFormElement').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const id = document.getElementById('popup-student-id').value;
+        const name = document.getElementById('popup-name').value;
+        const phone = document.getElementById('popup-phone').value;
+        const password = document.getElementById('popup-password').value;
+        const img = document.getElementById('popup-img').files[0];
+
+        const formData = new FormData();
+        formData.append('id', id);
+        formData.append('name', name);
+        formData.append('phone', phone);
+        formData.append('password', password);
+        if (img) {
+            formData.append('img', img);
+        }
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch('/student/update/', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const studentRow = document.getElementById(`student-row-${data.id}`);
+                studentRow.querySelector('td:nth-child(1)').textContent = data.name;
+                studentRow.querySelector('td:nth-child(2)').textContent = data.phone;
+                studentRow.querySelector('td:nth-child(3)').textContent = data.roll_no;
+                studentRow.querySelector('td:nth-child(4)').textContent = data.grade;
+                studentRow.querySelector('td:nth-child(5)').innerHTML = data.img ? `<a href="${data.img}" target="_blank"><img src="${data.img}" style="width: 50px; height: 50px; object-fit:cover;"></a>` : 'N/A';
+                popup.style.display = 'none';
+                document.getElementById('popupFormElement').reset();
+                window.location.href = "{% url 'manage_student' %}";
+            } else {
+                alert('Error updating student.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating student.');
+        });
+    });
+</script>
+
+
+<script>
+    $(document).ready(function() {
+        $('#dataTable').DataTable({
+            columnDefs: [
+                {
+                    targets: [6, 7, 8],
+                    orderable: false
+                }
+            ],
+            initComplete: function () {
+                this.api().columns([0, 1, 2, 3, 4]).every(function () {
+                    var column = this;
+                    var input = $('<input type="text" />')  // Removed placeholder
+                        .appendTo($(column.header()))
+                        .on('keyup change clear', function () {
+                            var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                            column.search(val ? '^' + val + '$' : '', true, false).draw();
+                        });
+                });
+            }
+        });
+    });
+</script>
+
+{% endblock %}
+
+

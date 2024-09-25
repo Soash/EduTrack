@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+{% block title %}Manage Teachers{% endblock %}
+
+{% block styles %}
+    <style>
+        #dataTable_filter {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="main">
+    <h2>Manage Teachers</h2>
+
+    <button id="toggleFormBtn" class="btn" style="margin-bottom: 20px;">
+        <i class="fas fa-plus"></i> Add Teacher
+    </button>
+
+    <div id="addForm" class="form-container" style="display: none;">
+        <form method="post" enctype="multipart/form-data" class="form">
+            <h2>Add Teacher</h2>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" id="closeFormBtn" class="btn btn-danger">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </form>
+    </div>
+
+    <table id="dataTable" class="display">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Subject</th>
+                <th>Image</th>
+                <th>Added By</th>
+                <th>Date Joined</th>
+                <th>Is Superuser</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for info in teachers %}
+            <tr id="info-row-{{ info.id }}">
+                <td>{{ info.user.username }}</td>
+                <td>{{ info.name }}</td>
+                <td>{{ info.phone }}</td>
+                <td>{{ info.subject }}</td>
+                <td>{% if info.img %}
+                    <a href="{{ info.img.url }}" target="_blank"><img src="{{ info.img.url }}" style="width: 50px; height: 50px; object-fit:cover;"></a>
+                    {% endif %}
+                </td>
+                <td>{{ info.added_by }}</td>
+                <td>{{ info.user.date_joined }}</td>
+                <td>{{ info.user.is_superuser }}</td>
+                <td>
+                    <button type="button" class="btn edit-btn" 
+                        data-info-id="{{ info.id }}" 
+                        data-info-name="{{ info.name }}" 
+                        data-info-phone="{{ info.phone }}"
+                        data-info-subject="{{ info.subject }}"
+                        data-info-is-superuser="{{ info.user.is_superuser }}">
+                    Edit</button>
+
+                    <form method="post" action="{% url 'delete_teacher' info.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Popup Form for Editing Teachers -->
+    <div id="popupForm" class="popup" style="display: none;">
+        <div class="popup-content">
+            <span id="closePopup" class="close">&times;</span>
+            <h2>Edit Teacher</h2>
+            <form id="popupFormElement" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" id="popup-info-id" name="info_id">
+
+                <label for="name">Name:</label>
+                <input type="text" id="popup-name" name="name" required>
+
+                <label for="phone">Phone:</label>
+                <input type="text" id="popup-phone" name="phone" required>
+
+                <label for="subject">Subject:</label>
+                <input type="text" id="popup-subject" name="subject" required>
+
+                <label for="password">Password:</label>
+                <input type="text" id="popup-password" name="password">
+
+                <label for="img">Image:</label>
+                <input type="file" id="popup-img" name="img">
+
+                <label for="popup-is-superuser">Is superuser:</label>
+                <input type="checkbox" name="is_superuser" id="popup-is-superuser"> <br>
+
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Popup form management
+    const popup = document.getElementById('popupForm');
+    const closeButton = document.getElementById('closePopup');
+
+    function openPopup(event) {
+        const id = event.target.getAttribute('data-info-id');
+        const name = event.target.getAttribute('data-info-name');
+        const phone = event.target.getAttribute('data-info-phone');
+        const subject = event.target.getAttribute('data-info-subject');
+        const is_superuser = event.target.getAttribute('data-info-is-superuser');
+
+        document.getElementById('popup-info-id').value = id;
+        document.getElementById('popup-name').value = name;
+        document.getElementById('popup-phone').value = phone;
+        document.getElementById('popup-subject').value = subject;
+
+        const superuserCheckbox = document.getElementById('popup-is-superuser');
+        if (is_superuser === 'True') {
+            superuserCheckbox.checked = true;
+        } else {
+            superuserCheckbox.checked = false;
+        }
+    
+        popup.style.display = 'block';
+    }
+
+    closeButton.onclick = function() {
+        popup.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target === popup) {
+            popup.style.display = 'none';
+        }
+    }
+
+    const editButtons = document.querySelectorAll('.edit-btn');
+    editButtons.forEach(button => {
+        button.addEventListener('click', openPopup);
+    });
+
+    // AJAX form submission for the popup edit form
+    document.getElementById('popupFormElement').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const id = document.getElementById('popup-info-id').value;
+        const name = document.getElementById('popup-name').value;
+        const phone = document.getElementById('popup-phone').value;
+        const subject = document.getElementById('popup-subject').value;
+        const password = document.getElementById('popup-password').value;
+        const is_superuser = document.getElementById('popup-is-superuser').checked;
+        const img = document.getElementById('popup-img').files[0];
+
+        const formData = new FormData();
+        formData.append('id', id);
+        formData.append('name', name);
+        formData.append('phone', phone);
+        formData.append('subject', subject);
+        formData.append('password', password);
+        formData.append('is_superuser', is_superuser ? 'true' : 'false'); 
+        if (img) {
+            formData.append('img', img);
+        }
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch('/teacher/update/', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const infoRow = document.getElementById(`info-row-${data.id}`);
+                infoRow.querySelector('td:nth-child(2)').textContent = data.name;
+                infoRow.querySelector('td:nth-child(3)').textContent = data.phone;
+                infoRow.querySelector('td:nth-child(4)').textContent = data.subject;
+                infoRow.querySelector('td:nth-child(5)').innerHTML = data.img ? `<a href="${data.img}" target="_blank"><img src="${data.img}" style="width: 50px; height: 50px; object-fit:cover;"></a>` : 'N/A';
+                popup.style.display = 'none';
+                document.getElementById('popupFormElement').reset();
+                window.location.href = "{% url 'manage_teacher' %}";
+            } else {
+                alert('Error updating teacher.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating teacher.');
+        });
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        $('#dataTable').DataTable({
+            columnDefs: [
+                {
+                    targets: [3,7],
+                    orderable: false
+                }
+            ],
+            initComplete: function () {
+                this.api().columns([0, 1, 2]).every(function () {
+                    var column = this;
+                    var input = $('<input type="text" placeholder="Search" />')
+                        .appendTo($(column.header()))
+                        .on('keyup change clear', function () {
+                            var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                            column.search(val ? '^' + val + '$' : '', true, false).draw();
+                        });
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

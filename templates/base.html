@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="soash">
+    <title>{% block title %}Teacher Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'base.css' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    {% block styles %}{% endblock %}
+</head>
+<body>
+
+    <div class="nav">
+        <img src="{% static 'logo.jpeg' %}">
+        <h2><a href="{% url 'home' %}">Teacher Dashboard</a></h2>
+    </div>
+
+    <div class="container">
+
+        <div class="sidebar">
+            <a href="{% url 'home' %}">Profile</a>
+            <a href="{% url 'attendance_record' %}">Attendance</a>
+            
+            <a href="{% url 'generate_salary' %}">Manage Salary</a>
+            <a href="{% url 'manage_student' %}">Manage Students</a>
+            <a href="{% url 'all_student' %}">All Students</a>
+            {% if request.user.is_superuser %}
+                <a href="{% url 'manage_teacher' %}">Manage Teachers</a>
+            {% endif %}        
+            <a href="{% url 'manage_exam' %}">Manage Exams</a>
+            <a href="{% url 'exam_results' %}">Student Results</a>
+            <a href="{% url 'manage_notice' %}">Manage Notices</a>
+            <a href="{% url 'manage_note' %}">Manage Notes</a>
+            <a href="{% url 'manage_lecture' %}">Manage Lectures</a>
+            <a href="{% url 'manage_routine' %}">Manage Routines</a>
+            <a href="{% url 'manage_subject' %}">Manage Subject</a>
+            <a href="{% url 'manage_period' %}">Manage Periods</a>
+            <a href="{% url 'logout' %}">Logout</a>
+            <a href="https://soash.github.io/">Developer Info</a>
+        </div>
+
+        <div class="content">
+            {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+
+
+
+
+    <script src="{% static 'base.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTables
+            //$('#dataTable').DataTable();
+    
+            // Toggle Add add form
+            $('#toggleFormBtn').click(function() {
+                $('#addForm').toggle();
+            });
+    
+            // Close Add Student form
+            $('#closeFormBtn').click(function() {
+                $('#addForm').hide();
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

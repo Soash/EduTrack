@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
+    <meta name="author" content="soash">
+    <title>Exam Results</title>
+    <link rel="stylesheet" href="{% static 'base.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
+    <style>
+        body {
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        h2{
+            text-align: center;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="width: 25%;">
+    <h1>Search Exam Results</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <label for="grade">Class:</label>
+        <input type="text" id="grade" name="grade" required>
+   
+        <label for="roll">Roll Number:</label>
+        <input type="text" id="roll" name="roll" required>
+   
+        <label for="start_date">Start Date:</label>
+        <input type="date" id="start_date" name="start_date" required>
+  
+        <label for="end_date">End Date:</label>
+        <input type="date" id="end_date" name="end_date" required>
+  
+        <button type="submit" class="btn btn-success">Search</button>
+    </form>
+    </div>
+
+    {% if results %}
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img src="{% static 'logo.jpeg' %}" style="width: 100px;">
+            <h2>সমীকরণ শিক্ষা পরিবার</h2>
+        </div>
+        <div>Student Name: {{student_name}}</div>
+        <div>Student Class: {{student_grade}}</div>
+        <div>Student Roll: {{student_roll}}</div>
+        <div>Total Exam: {{total_exam}}</div>
+        <div>Date: {{today}}</div>
+        <h2>Exam Results</h2>
+        <table>
+            <thead>
+                <tr>
+                    {% comment %} <th>Student</th> {% endcomment %}
+                    <th>Date</th>
+                    <th>Exam Name</th>
+                    <th>Marks Obtained</th>
+                    <th>Total Marks</th>
+                    {% comment %} <th>Position</th> {% endcomment %}
+                    <th>Symbol</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                    <tr>
+                        {% comment %} <td>{{ result.student.name }}</td> {% endcomment %}
+                        <td>{{ result.exam.date }}</td>
+                        <td>{{ result.exam.name }}</td>
+                        <td>{{ result.exam_marks }}</td>
+                        <td>{{ result.exam.total_marks }}</td>
+                        {% comment %} <td>{{ result.position }}</td> {% endcomment %}
+                        <td>{{ result.get_symbol_display }}</td>
+                    </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="2"><strong>Total:</strong></td>
+                    <td><strong>{{ exam_marks_sum }}</strong></td>
+                    <td><strong>{{ total_marks_sum }}</strong></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="print-button">
+            <button onclick="window.print()" class="btn no-print">Print Results</button>
+        </div>
+    {% else %}
+        <p>No results found.</p>
+    {% endif %}
+</body>
+</html>

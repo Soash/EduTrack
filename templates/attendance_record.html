@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% load tags %}
+<div class="main">
+    <h2>Attendance Record</h2>
+    <h2>Date: {{ attendance_date }}</h2>
+    <h2>Class: {{ grade }}</h2>
+
+    <form id="attendanceForm">
+        {% csrf_token %}
+        <input type="hidden" name="date" value="{{ attendance_date }}">
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Roll No</th>
+                    <th>Name</th>
+                    <th class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                    <tr>
+                        <td>{{ student.roll }}</td>
+                        <td>{{ student.name }}</td>
+       
+                        <td style="text-align:center;">
+                            {% if student|get_attendance_status:date_str == 'present' %}
+                                <button type="button" class="btn btn-success present-btn" data-student-id="{{ student.id }}">Present</button>
+                            {% else %}
+                                <button type="button" class="btn present-btn" data-student-id="{{ student.id }}">Present</button>
+                            {% endif %}
+
+                            {% if student|get_attendance_status:date_str == 'absent' %}
+                                <button type="button" class="btn btn-danger absent-btn" data-student-id="{{ student.id }}">Absent</button>
+                            {% else %}
+                                <button type="button" class="btn absent-btn" data-student-id="{{ student.id }}">Absent</button>
+                            {% endif %}
+                        </td>
+
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.present-btn').click(function() {
+            const studentId = $(this).data('student-id');
+            updateAttendance(studentId, 'present', this);
+        });
+
+        $('.absent-btn').click(function() {
+            const studentId = $(this).data('student-id');
+            updateAttendance(studentId, 'absent', this);
+        });
+
+        function updateAttendance(studentId, status, button) {
+            $.ajax({
+                url: `/student/${status}/${studentId}/`,
+                type: 'POST',
+                data: {
+                    'status': status,
+                    'date': '{{date_str}}',
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $(button).siblings().removeClass('btn-success btn-danger');
+                        $(button).addClass(status === 'present' ? 'btn-success' : 'btn-danger');
+                    }
+                },
+                error: function(xhr, errmsg, err) {
+                    console.log('Error: ' + errmsg);
+                }
+            });
+        }
+    });
+</script>
+
+{% endblock %}

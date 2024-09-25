@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="main">
+<h2>Routine for {{ grade }}</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Day</th>
+            <th>Period</th>
+            <th>Teacher</th>
+            <th>Subject</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for routine in routines %}
+        <tr id="routine-row-{{ routine.id }}">
+            <td>{{ routine.day }}</td>
+            <td>{{ routine.period }}</td>
+            <td>
+                <select class="teacher-select" data-routine-id="{{ routine.id }}">
+                    <option value="">Select Teacher</option>
+                    {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}">{{ teacher.name }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <select class="subject-select" data-routine-id="{{ routine.id }}">
+                    <option value="">Select Subject</option>
+                    {% for subject in subjects %}
+                        <option value="{{ subject.id }}">{{ subject.subject }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Handle teacher and subject selection changes
+    document.querySelectorAll('.teacher-select, .subject-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const routineId = this.getAttribute('data-routine-id');
+            const teacherId = this.closest('tr').querySelector('.teacher-select').value;
+            const subjectId = this.closest('tr').querySelector('.subject-select').value;
+            //console.log(routineId);
+            url = '/routine/update/' + routineId + '/';
+            //console.log(url);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ teacher_id: teacherId, subject_id: subjectId })
+            })
+            
+            .then(response => {
+                return response.text().then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        return data;
+                    } catch (error) {
+                        console.error('Error parsing JSON:', error);
+                        console.error('Response text:', text);
+                        throw error; // re-throw the error for the next catch block
+                    }
+                });
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log('Routine updated successfully');
+                } else {
+                    console.error('Error updating routine:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+            });
+        });
+    });
+</script>
+</div>
+{% endblock %}

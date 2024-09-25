@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% block title %}Exam{% endblock %}
+
+{% block styles %}
+    <style>
+        #dataTable_filter {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="main">
+    <h2>Exam</h2>
+
+    <button id="toggleFormBtn" class="btn" style="margin-bottom: 20px;">
+        <i class="fas fa-plus"></i> Add Exam
+    </button>
+
+    <div id="addForm" class="form-container" style="display: none;">
+        <form method="post" class="form">
+            <h2>Add Exam</h2>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" id="closeFormBtn" class="btn btn-danger">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </form>
+    </div>
+
+    <table id="dataTable" class="display">
+        <thead>
+            <tr>
+                <th>Exam Name</th>
+                <th>Class</th>
+                <th>Subject</th>
+                <th>Date</th>
+                <th>Total Marks</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for info in exams %}
+            <tr id="info-row-{{ info.id }}">
+                <td>{{ info.name }}</td>
+                <td>{{ info.grade }}</td>
+                <td>{{ info.subject }}</td>
+                <td>{{ info.date|date:"Y-m-d" }}</td>
+                <td>{{ info.total_marks }}</td>
+                <td class="text-center">
+                    <button type="button" onclick="window.location.href='{% url 'update_exam_results' info.id %}'" class="btn btn-success">Update</button>
+                    <button type="button" onclick="window.location.href='{% url 'view_exam_results' info.id %}'" class="btn btn-success">View</button>
+                    <button type="button" class="btn edit-btn"
+                        data-info-id="{{ info.id }}" 
+                        data-info-name="{{ info.name }}"
+                        data-info-subject="{{ info.subject }}"
+                        data-info-date="{{ info.date|date:'Y-m-d' }}"
+                        data-info-total_marks="{{ info.total_marks }}">
+                        
+                    Edit</button>
+                        
+                    <form method="post" action="{% url 'delete_exam' info.id %}" style="display:inline;">{% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+
+                    
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+        <!-- Popup Form -->
+        <div id="popupForm" class="popup" style="display: none;">
+            <div class="popup-content">
+                <span id="closePopup" class="close">&times;</span>
+                <h2>Edit Exam</h2>
+                <form id="popupFormElement" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" id="popup-info-id" name="info_id">
+
+                    <label for="name">Exam Name:</label>
+                    <input type="text" id="popup-name" name="name" required>
+
+                    <label for="subject">Subject:</label>
+                    <input type="text" id="popup-subject" name="subject" required>
+
+                    <label for="date">Date:</label>
+                    <input type="date" id="popup-date" name="date" required>
+
+                    <label for="total_marks">Total Marks:</label>
+                    <input type="text" id="popup-total-marks" name="total_marks" required>
+
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Get the popup and the close button
+    const popup = document.getElementById('popupForm');
+    const closeButton = document.getElementById('closePopup');
+    
+    // Function to open the popup with the selected exam's data
+    function openPopup(event) {
+        const id = event.target.getAttribute('data-info-id');
+        const name = event.target.getAttribute('data-info-name');
+        const subject = event.target.getAttribute('data-info-subject');
+        const date = event.target.getAttribute('data-info-date');
+        const TotalMarks = event.target.getAttribute('data-info-total_marks');
+
+        document.getElementById('popup-info-id').value = id;
+        document.getElementById('popup-name').value = name;
+        document.getElementById('popup-subject').value = subject;
+        document.getElementById('popup-date').value = date;
+        document.getElementById('popup-total-marks').value = TotalMarks;
+
+        popup.style.display = 'block';
+    }
+
+    // Close the popup when the close button is clicked
+    closeButton.onclick = function() {
+        popup.style.display = 'none';
+    }
+
+    // Hide the popup if the user clicks outside the popup content
+    window.onclick = function(event) {
+        if (event.target === popup) {
+            popup.style.display = 'none';
+        }
+    }
+
+    // Attach event listeners to all "Edit" buttons
+    const editButtons = document.querySelectorAll('.edit-btn');
+    editButtons.forEach(button => {
+        button.addEventListener('click', openPopup);
+    });
+</script>
+
+<script>
+    // Handle form submission with AJAX
+    document.getElementById('popupFormElement').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const id = document.getElementById('popup-info-id').value;
+        const name = document.getElementById('popup-name').value;
+        const subject = document.getElementById('popup-subject').value;
+        const date = document.getElementById('popup-date').value;
+        const totalMarks = document.getElementById('popup-total-marks').value;
+
+        // Prepare the form data
+        const formData = new FormData();
+        formData.append('id', id);
+        formData.append('name', name);
+        formData.append('subject', subject);
+        formData.append('date', date);
+        formData.append('total_marks', totalMarks);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');  // Add CSRF token
+
+        // Send AJAX request
+        fetch('/exam/update/', { // Adjust your URL if needed
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the table row with the new values
+                const infoRow = document.getElementById(`info-row-${data.id}`);
+                infoRow.querySelector('td:nth-child(1)').textContent = data.name;
+                infoRow.querySelector('td:nth-child(3)').textContent = data.subject;
+                infoRow.querySelector('td:nth-child(4)').textContent = data.date;
+                infoRow.querySelector('td:nth-child(5)').textContent = data.total_marks;
+
+                // Hide the popup
+                popup.style.display = 'none';
+            } else {
+                alert('There was an error updating the exam.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('There was an error updating the exam.');
+        });
+    });
+</script>
+
+
+<script>
+    $(document).ready(function() {
+        // Initialize DataTables
+        $('#dataTable').DataTable({
+            
+            columnDefs: [
+                {
+                    targets: [4, 5], // Indexes of the 'URL' and 'Actions' columns
+                    orderable: false // Disable sorting for these columns
+                }
+            ],
+
+            initComplete: function () {
+                // Apply filtering only to the 'Grade' and 'Subject' columns
+                this.api().columns([0, 1, 2, 3]).every(function () {
+                    var column = this;
+                    var header = $(column.header());
+                    var input = $('<input type="text" placeholder="Search ' + header.text() + '" />')
+                        .appendTo(header)
+                        .on('keyup change clear', function () {
+                            var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                            column.search(val ? '^' + val + '$' : '', true, false).draw();
+                        });
+                });
+            }
+        });
+    });
+</script>
+{% endblock  %}

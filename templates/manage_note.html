@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% block title %}Note{% endblock %}
+
+{% block styles %}
+    <style>
+        #dataTable_filter {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="main">
+    <h2>Note</h2>
+
+    <button id="toggleFormBtn" class="btn" style="margin-bottom: 20px;">
+        <i class="fas fa-plus"></i> Add Note
+    </button>
+
+    <div id="addForm" class="form-container" style="display: none;">
+        <form method="post" enctype="multipart/form-data" class="form">
+            <h2>Add Note</h2>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" id="closeFormBtn" class="btn btn-danger">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </form>
+    </div>
+
+
+    <table id="dataTable" class="display">
+        <thead>
+            <tr>
+                <th>Class</th>
+                <th>Subject</th>
+                <th>Content</th>
+                <th>URL</th>
+                <th>PDF</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for note in notes %}
+                <tr id="note-row-{{ note.id }}">
+                    <td>{{ note.grade }}</td>
+                    <td>{{ note.subject }}</td>
+                    <td>{{ note.content }}</td>
+                    <td>
+                        {% if note.url %}
+                            <a href="{{ note.url }}" target="_blank">Link</a>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if note.pdf %}
+                            <a href="{{ note.pdf.url }}" target="_blank">PDF</a>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn edit-btn"
+                            data-note-id="{{ note.id }}" 
+                            data-note-grade="{{ note.grade }}" 
+                            data-note-subject="{{ note.subject }}" 
+                            data-note-content="{{ note.content }}" 
+                            data-note-url="{{ note.url }}">Edit</button>
+                        <form method="post" action="{% url 'delete_note' note.id %}" style="display:inline;">{% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Popup Form -->
+    <div id="popupForm" class="popup" style="display: none;">
+        <div class="popup-content">
+            <span id="closePopup" class="close">&times;</span>
+            <h2>Edit Note</h2>
+            <form id="popupFormElement" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" id="popup-note-id" name="note_id">
+
+                <label for="grade">Grade:</label>
+                <input type="text" id="popup-grade" name="grade" required>
+
+                <label for="subject">Subject:</label>
+                <input type="text" id="popup-subject" name="subject" required>
+
+                <label for="content">Content:</label>
+                <input type="text" id="popup-content" name="content" required>
+
+                <label for="url">URL:</label>
+                <input type="text" id="popup-url" name="url">
+
+                <label for="pdf">PDF:</label>
+                <input type="file" id="popup-pdf" name="pdf">
+
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Get the popup and the close button
+    const popup = document.getElementById('popupForm');
+    const closeButton = document.getElementById('closePopup');
+
+    // Function to open the popup with the selected note's data
+    function openPopup(event) {
+        const noteId = event.target.getAttribute('data-note-id');
+        const noteGrade = event.target.getAttribute('data-note-grade');
+        const noteSubject = event.target.getAttribute('data-note-subject');
+        const noteContent = event.target.getAttribute('data-note-content');
+        const noteUrl = event.target.getAttribute('data-note-url');
+        const notePdf = event.target.getAttribute('data-note-pdf');
+
+        document.getElementById('popup-note-id').value = noteId;
+        document.getElementById('popup-grade').value = noteGrade;
+        document.getElementById('popup-subject').value = noteSubject;
+        document.getElementById('popup-content').value = noteContent;
+        document.getElementById('popup-url').value = noteUrl || '';
+        // Display the existing PDF link if available
+        if (notePdf) {
+            document.getElementById('popup-pdf').insertAdjacentHTML('afterend', `<p>Current PDF: <a href="${notePdf}" target="_blank">View PDF</a></p>`);
+        }
+
+        popup.style.display = 'block';
+    }
+
+    // Close the popup when the close button is clicked
+    closeButton.onclick = function() {
+        popup.style.display = 'none';
+        // Clear the PDF link from the form
+        document.querySelector('#popup-pdf + p')?.remove();
+    }
+
+    // Hide the popup if the user clicks outside the popup content
+    window.onclick = function(event) {
+        if (event.target === popup) {
+            popup.style.display = 'none';
+        }
+    }
+
+    // Attach event listeners to all "Edit" buttons
+    const editButtons = document.querySelectorAll('.edit-btn');
+    editButtons.forEach(button => {
+        button.addEventListener('click', openPopup);
+    });
+
+    // Handle form submission with AJAX
+    document.getElementById('popupFormElement').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const noteId = document.getElementById('popup-note-id').value;
+        const grade = document.getElementById('popup-grade').value;
+        const subject = document.getElementById('popup-subject').value;
+        const content = document.getElementById('popup-content').value;
+        const url = document.getElementById('popup-url').value;
+        const pdf = document.getElementById('popup-pdf').files[0];
+        
+        // Prepare the form data
+        const formData = new FormData();
+        formData.append('note_id', noteId);
+        formData.append('grade', grade);
+        formData.append('subject', subject);
+        formData.append('content', content);
+        formData.append('url', url);
+        if (pdf) {
+            formData.append('pdf', pdf);
+        }
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');  // Add CSRF token
+
+        // Send AJAX request
+        fetch('/note/update/', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the note row with new data
+                const noteRow = document.getElementById(`note-row-${data.note_id}`);
+                noteRow.querySelector('td:nth-child(1)').textContent = data.grade;
+                noteRow.querySelector('td:nth-child(2)').textContent = data.subject;
+                noteRow.querySelector('td:nth-child(3)').textContent = data.content;
+                noteRow.querySelector('td:nth-child(4)').innerHTML = data.url ? `<a href="${data.url}" target="_blank">Link</a>` : 'N/A';
+                noteRow.querySelector('td:nth-child(5)').innerHTML = data.pdf ? `<a href="${data.pdf}" target="_blank">PDF</a>` : 'N/A';
+                
+                // Hide the popup
+                popup.style.display = 'none';
+            }
+        });
+    });
+</script>
+
+
+<script>
+    $(document).ready(function() {
+        // Initialize DataTables
+        $('#dataTable').DataTable({
+            
+            columnDefs: [
+                {
+                    targets: [3, 4, 5], // Indexes of the 'URL' and 'Actions' columns
+                    orderable: false // Disable sorting for these columns
+                }
+            ],
+
+            initComplete: function () {
+                // Apply filtering only to the 'Grade' and 'Subject' columns
+                this.api().columns([0, 1, 2]).every(function () {
+                    var column = this;
+                    var header = $(column.header());
+                    var input = $('<input type="text" placeholder="Search ' + header.text() + '" />')
+                        .appendTo(header)
+                        .on('keyup change clear', function () {
+                            var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                            column.search(val ? '^' + val + '$' : '', true, false).draw();
+                        });
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="main">
+    <h1>Welcome to the Teacher Dashboard</h1>
+    <p>Username: {{ teacher.user.username }}</p>
+    <p>Name: {{ teacher.name }}</p>
+    <p>Phone: {{ teacher.phone }}</p>
+    
+    {% if teacher.img %}
+        <img src="{{ teacher.img.url }}" alt="Profile Picture" width="150">
+    {% else %}
+        <p>No profile image available.</p>
+    {% endif %}
+    <br>
+    <button type="button" id="toggleFormBtn" class="btn">Update Profile</button>
+
+    
+    
+    <div id="addForm" style="display: none;">
+        <!-- Profile Update Form -->
+        <h2>Update Profile</h2>
+        <form method="post" enctype="multipart/form-data" class="form">
+            {% csrf_token %}
+            {{ profile_form.as_p }}
+            <button type="submit" class="btn">Update Profile</button>
+        </form>
+    
+
+        <!-- Password Change Form -->
+        <h2>Change Password</h2>
+        <form method="post" class="form">
+            {% csrf_token %}
+            {{ password_form.as_p }}
+            <button type="submit" class="btn">Change Password</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+
+{% block scripts %}
+<script>
+    const label = document.querySelector('label[for="img-clear_id"]');
+    label.style.display = 'inline';
+    label.style.margin = '0';
+</script>
+{% endblock %}
+    

@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% block title %}Lecture{% endblock %}
+
+{% block styles %}
+    <style>
+        #dataTable_filter {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="main">
+    <h2>Lecture</h2>
+
+    <button id="toggleFormBtn" class="btn" style="margin-bottom: 20px;">
+        <i class="fas fa-plus"></i> Add Lecture
+    </button>
+
+    <div id="addForm" class="form-container" style="display: none;">
+        <form method="post" class="form">
+            <h2>Add Lecture</h2>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" id="closeFormBtn" class="btn btn-danger">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </form>
+    </div>
+
+    <table id="dataTable" class="display">
+        <thead>
+            <tr>
+                <th>Class</th>
+                <th>Subject</th>
+                <th>Content</th>
+                <th>URL</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lecture in lectures %}
+                <tr id="lecture-row-{{ lecture.id }}">
+                    <td>{{ lecture.grade }}</td>
+                    <td>{{ lecture.subject }}</td>
+                    <td>{{ lecture.content }}</td>
+                    <td>
+                        {% if lecture.url %}
+                            <a href="{{ lecture.url }}" target="_blank">Link</a>
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn edit-btn" 
+                            data-lecture-id="{{ lecture.id }}" 
+                            data-lecture-grade="{{ lecture.grade }}" 
+                            data-lecture-subject="{{ lecture.subject }}" 
+                            data-lecture-content="{{ lecture.content }}" 
+                            data-lecture-url="{{ lecture.url }}">
+                            
+                        Edit</button>
+                        <form method="post" action="{% url 'delete_lecture' lecture.id %}" style="display:inline;">{% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Popup Form -->
+    <div id="popupForm" class="popup" style="display: none;">
+        <div class="popup-content">
+            <span id="closePopup" class="close">&times;</span>
+            <h2>Edit Lecture</h2>
+            <form id="popupFormElement">
+                {% csrf_token %}
+                <input type="hidden" id="popup-lecture-id" name="lecture_id">
+
+                <label for="grade">Class:</label>
+                <input type="text" id="popup-grade" name="grade" required>
+
+                <label for="subject">Subject:</label>
+                <input type="text" id="popup-subject" name="subject" required>
+
+                <label for="content">Content:</label>
+                <input type="text" id="popup-content" name="content" required></textarea>
+
+                <label for="url">URL:</label>
+                <input type="text" id="popup-url" name="url">
+
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Get the popup and the close button
+    const popup = document.getElementById('popupForm');
+    const closeButton = document.getElementById('closePopup');
+    
+    // Function to open the popup with the selected lecture's data
+    function openPopup(event) {
+        const lectureId = event.target.getAttribute('data-lecture-id');
+        const lectureGrade = event.target.getAttribute('data-lecture-grade');
+        const lectureSubject = event.target.getAttribute('data-lecture-subject');
+        const lectureContent = event.target.getAttribute('data-lecture-content');
+        const lectureUrl = event.target.getAttribute('data-lecture-url');
+
+        document.getElementById('popup-lecture-id').value = lectureId;
+        document.getElementById('popup-grade').value = lectureGrade;
+        document.getElementById('popup-subject').value = lectureSubject;
+        document.getElementById('popup-content').value = lectureContent;
+        document.getElementById('popup-url').value = lectureUrl || '';
+
+        popup.style.display = 'block';
+    }
+
+    // Close the popup when the close button is clicked
+    closeButton.onclick = function() {
+        popup.style.display = 'none';
+    }
+
+    // Hide the popup if the user clicks outside the popup content
+    window.onclick = function(event) {
+        if (event.target === popup) {
+            popup.style.display = 'none';
+        }
+    }
+
+    // Attach event listeners to all "Edit" buttons
+    const editButtons = document.querySelectorAll('.edit-btn');
+    editButtons.forEach(button => {
+        button.addEventListener('click', openPopup);
+    });
+</script>
+
+
+<script>
+    // Handle form submission with AJAX
+    document.getElementById('popupFormElement').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const lectureId = document.getElementById('popup-lecture-id').value;
+        const grade = document.getElementById('popup-grade').value;
+        const subject = document.getElementById('popup-subject').value;
+        const content = document.getElementById('popup-content').value;
+        const url = document.getElementById('popup-url').value;
+        
+        // Prepare the form data
+        const formData = new FormData();
+        formData.append('lecture_id', lectureId);
+        formData.append('grade', grade);
+        formData.append('subject', subject);
+        formData.append('content', content);
+        formData.append('url', url);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');  // Add CSRF token
+
+        // Send AJAX request
+        fetch('/lecture/update/', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Update the table row with the new values
+                const lectureRow = document.getElementById(`lecture-row-${data.lecture_id}`);
+                lectureRow.querySelector('td:nth-child(1)').textContent = data.grade;
+                lectureRow.querySelector('td:nth-child(2)').textContent = data.subject;
+                lectureRow.querySelector('td:nth-child(3)').textContent = data.content;
+                lectureRow.querySelector('td:nth-child(4)').innerHTML = data.url ? `<a href="${data.url}" target="_blank">Link</a>` : 'N/A';
+
+                // Hide the popup
+                popup.style.display = 'none';
+            } else {
+                alert('There was an error updating the lecture.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('There was an error updating the lecture.');
+        });
+    });
+</script>
+
+
+<script>
+    $(document).ready(function() {
+        // Initialize DataTables
+        $('#dataTable').DataTable({
+            
+            columnDefs: [
+                {
+                    targets: [3, 4], // Indexes of the 'URL' and 'Actions' columns
+                    orderable: false // Disable sorting for these columns
+                }
+            ],
+
+            initComplete: function () {
+                // Apply filtering only to the 'Grade' and 'Subject' columns
+                this.api().columns([0, 1, 2]).every(function () {
+                    var column = this;
+                    var header = $(column.header());
+                    var input = $('<input type="text" placeholder="Search ' + header.text() + '" />')
+                        .appendTo(header)
+                        .on('keyup change clear', function () {
+                            var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                            column.search(val ? '^' + val + '$' : '', true, false).draw();
+                        });
+                });
+            }
+        });
+    });
+</script>
+{% endblock  %}

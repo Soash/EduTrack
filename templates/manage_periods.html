@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}Manage Periods{% endblock %}
+{% block styles %}
+    <style>
+        #dataTable_filter {
+            display: none;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<div class="main">
+    <h2>Manage Periods</h2>
+
+    <!-- Add/Edit Form -->
+    <button id="toggleFormBtn" class="btn" style="margin-bottom: 20px;">
+        <i class="fas fa-plus"></i> Add Period
+    </button>
+
+    <div id="addForm" class="form-container" style="display: none;">
+        <form method="post" class="form">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" id="closeFormBtn" class="btn btn-danger">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </form>
+    </div>
+
+    <!-- Periods Table -->
+    <table id="dataTable" class="display">
+        <thead>
+            <tr>
+                <th>Period</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for period in periods %}
+            <tr id="period-row-{{ period.id }}">
+                <td>Period {{ period.period_number }}</td>
+                <td>{{ period.start_time }}</td>
+                <td>{{ period.end_time }}</td>
+                <td class="text-center">
+                    <button type="button" class="btn edit-btn"
+                        data-period-id="{{ period.id }}"
+                        data-period-number="{{ period.period_number }}"
+                        data-start-time="{{ period.start_time }}"
+                        data-end-time="{{ period.end_time }}">Edit</button>
+                    <form method="post" action="" style="display:inline;">{% csrf_token %}
+                        <input type="hidden" name="delete_period" value="{{ period.id }}">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Popup Form for Edit -->
+    <div id="popupForm" class="popup" style="display: none;">
+        <div class="popup-content">
+            <span id="closePopup" class="close">&times;</span>
+            <h2>Edit Period</h2>
+            <form id="popupFormElement">
+                {% csrf_token %}
+                <input type="hidden" id="popup-period-id" name="period_id">
+
+                <label for="popup-period-number">Period Number:</label>
+                <input type="text" id="popup-period-number" name="period_number" required>
+
+                <label for="popup-start-time">Start Time:</label>
+                <input type="time" id="popup-start-time" name="start_time" required>
+
+                <label for="popup-end-time">End Time:</label>
+                <input type="time" id="popup-end-time" name="end_time" required>
+
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Popup functionality for Edit
+    const popup = document.getElementById('popupForm');
+    const closePopup = document.getElementById('closePopup');
+
+    function openPopup(event) {
+        const periodId = event.target.getAttribute('data-period-id');
+        const periodNumber = event.target.getAttribute('data-period-number');
+        const startTime = event.target.getAttribute('data-start-time');
+        const endTime = event.target.getAttribute('data-end-time');
+
+        document.getElementById('popup-period-id').value = periodId;
+        document.getElementById('popup-period-number').value = periodNumber;
+        document.getElementById('popup-start-time').value = startTime;
+        document.getElementById('popup-end-time').value = endTime;
+
+        popup.style.display = 'block';
+    }
+
+    closePopup.onclick = function() {
+        popup.style.display = 'none';
+    };
+
+    // Attach event listeners to all Edit buttons
+    const editButtons = document.querySelectorAll('.edit-btn');
+    editButtons.forEach(button => {
+        button.addEventListener('click', openPopup);
+    });
+
+    // Handle form submission with AJAX
+    document.getElementById('popupFormElement').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+
+        fetch('/period/edit/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'  // Important to identify it as an AJAX request
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            if (data.success) {
+                // Update the table with the new data
+                const periodRow = document.getElementById(`period-row-${data.period_id}`);
+                periodRow.querySelector('td:nth-child(1)').textContent = `Period ${data.period_number}`;
+                periodRow.querySelector('td:nth-child(2)').textContent = data.start_time;
+                periodRow.querySelector('td:nth-child(3)').textContent = data.end_time;
+        
+                popup.style.display = 'none';
+            } else {
+                console.error('Update failed:', data.errors || data.error);
+            }
+        });
+           
+    });
+</script>
+<script>
+    $(document).ready(function() {
+        // Initialize DataTables
+        $('#dataTable').DataTable({
+            
+        });
+    });
+</script>
+{% endblock %}

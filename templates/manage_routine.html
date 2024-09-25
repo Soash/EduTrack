@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="main">
+<h2>Manage Routine</h2>
+
+<div class="form-container">
+    <form method="POST" class="form">
+        {% csrf_token %}
+        <label for="grade">Class:</label>
+        <input type="text" name="grade" id="grade" required>
+        <button type="submit">Generate Routines</button>
+    </form>
+</div>
+{% if unique_grades %}
+<table id="dataTable" class="display">
+    <thead>
+        <tr>
+            <th>Class</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for grade in unique_grades %}
+        <tr>
+            <td class="text-center">Class {{ grade }}</td>
+            <td class="text-center"><button class="btn btn-success" onclick="window.location.href='{% url 'view_routine' grade %}'">View Routine</button>
+      
+                <form method="POST" action="{% url 'delete_routine' grade %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete all routines for Class {{ grade }}?');">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="2">No Routine available.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize DataTables
+        $('#dataTable').DataTable({
+            
+        });
+    });
+</script>
+{% endblock %}
+    

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Update Exam Results{% endblock %}
+{% block styles %}
+    <style>
+        #dataTable_filter {
+            display: none;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<div class="main">
+    <h2>Exam: {{ exam.name }}, Date: {{exam.date}}</h2>
+    <h2>Class: {{ exam.grade}}, Subject: {{exam.subject}}, Marks: {{exam.total_marks}}</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ formset.management_form }}
+    
+        <table id="dataTable" class="display">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Roll</th>
+                    <th>Marks</th>
+                    <th>Symbol</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for form in formset %}
+                <tr>
+                    {{ form.id }} <!-- ID field for each form -->
+                    <td>{{ form.instance.student.name }}</td>
+                    <td>{{ form.instance.student.roll }}</td>
+                    <td class="text-center">{{ form.exam_marks }}</td>
+                    <td>{{ form.symbol }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    
+        <button type="submit" class="btn btn-success">Save Results</button>
+        <button type="button" onclick="window.location.href='{% url 'manage_exam' %}'" class="btn btn-danger">Cancel</button>
+    </form>
+    
+</div>
+{% endblock %}
+
+
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Initialize DataTables
+        $('#dataTable').DataTable({
+            columnDefs: [
+                {
+                    targets: [2,3],
+                    orderable: false
+                }
+            ],
+            initComplete: function () {
+                this.api().columns([0, 1]).every(function () {
+                    var column = this;
+                    var header = $(column.header());
+                    var input = $('<input type="text" placeholder="Search ' + header.text() + '" />')
+                        .appendTo(header)
+                        .on('keyup change clear', function () {
+                            var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                            column.search(val ? '^' + val + '$' : '', true, false).draw();
+                        });
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}
+    
