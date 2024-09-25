@@ -156,7 +156,7 @@ if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
     SECURE_CONTENT_TYPE_NOSNIFF = True
 
-    CSRF_TRUSTED_ORIGINS = ['https://test.onlineincomesrc.eu.org']
+    CSRF_TRUSTED_ORIGINS = ['https://nextjs.softravine.com']
 else:
     CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1', 'http://localhost', 'https://choice-alien-saved.ngrok-free.app']
 
