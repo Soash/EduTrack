@@ -929,6 +929,7 @@ def promote_class(request, grade):
         messages.error(request, "Failed to promote students. Ensure the grade is numeric.")
     
     return redirect('your_class_list_view')  # Redirect to the class list view
+
 # Student
 ############################################################################################################
 
@@ -961,22 +962,22 @@ def generate_salary(request):
         return redirect('generate_salary')
 
     # Handle toggling of status
-    if request.method == 'POST' and 'toggle_status' in request.POST:
-        salary_id = request.POST.get('salary_id')
-        salary = get_object_or_404(MonthlySalary, id=salary_id)
-        if salary.status == 'paid':
-            salary.status = 'unpaid'
-        else:
-            salary.status = 'paid'
-        salary.save()
-        return redirect('generate_salary')
+    # if request.method == 'POST' and 'toggle_status' in request.POST:
+    #     salary_id = request.POST.get('salary_id')
+    #     salary = get_object_or_404(MonthlySalary, id=salary_id)
+    #     if salary.status == 'paid':
+    #         salary.status = 'unpaid'
+    #     else:
+    #         salary.status = 'paid'
+    #     salary.save()
+    #     return redirect('generate_salary')
     
-    if request.method == 'POST' and 'delete_salary' in request.POST:
-        salary_id = request.POST.get('delete_salary_id')
-        salary = get_object_or_404(MonthlySalary, id=salary_id)
-        salary.delete()
-        messages.success(request, 'Salary record deleted successfully.')
-        return redirect('generate_salary')
+    # if request.method == 'POST' and 'delete_salary' in request.POST:
+    #     salary_id = request.POST.get('delete_salary_id')
+    #     salary = get_object_or_404(MonthlySalary, id=salary_id)
+    #     salary.delete()
+    #     messages.success(request, 'Salary record deleted successfully.')
+    #     return redirect('generate_salary')
 
 
     # Get all salary records for the current month to display in the template
@@ -988,6 +989,28 @@ def generate_salary(request):
         'current_year': current_year,
     })
 
+
+def toggle_salary_status(request):
+    if request.method == 'POST':
+        salary_id = request.POST.get('salary_id')
+        try:
+            salary = MonthlySalary.objects.get(id=salary_id)
+            # Toggle the status
+            salary.status = 'unpaid' if salary.status == 'paid' else 'paid'
+            salary.save()
+            return JsonResponse({
+                'success': True,
+                'new_status': salary.get_status_display(),  # Use get_status_display() for a user-friendly label
+            })
+        except MonthlySalary.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Salary record not found.'})
+
+def delete_salary(request):
+    if request.method == 'POST':
+        salary_id = request.POST.get('delete_salary_id')
+        salary = MonthlySalary.objects.get(id=salary_id)
+        salary.delete()
+        return JsonResponse({'success': True})
 
 # Salary
 ############################################################################################################

@@ -55,6 +55,8 @@ urlpatterns = [
     path('promote-class/<str:grade>/', views.promote_class, name='promote_class'),
 
     path('generate-salary/', views.generate_salary, name='generate_salary'),
+    path('toggle_salary_status/', views.toggle_salary_status, name='toggle_salary_status'),
+    path('delete_salary/', views.delete_salary, name='delete_salary'),
 
     path('periods/', views.manage_period, name='manage_period'),
     path('period/edit/', views.edit_period_ajax, name='edit_period_ajax'),
