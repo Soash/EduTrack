@@ -1,0 +1,87 @@
+# Create Student
+    URL: http://localhost:8000/api/create-student/
+    Body (JSON):
+        {
+            "name": "John Doe",
+            "phone": "1234567890",
+            "grade": "10",
+            "password": "password123",
+            "img": " "
+        }
+    # make sure user can input only Alphabets and Digits for username
+
+# Get Token
+    URL: http://localhost:8000/api/token/
+    Method: POST
+    Body (JSON):
+        {
+            "username": "admin",
+            "password": "12345"
+        }
+
+# Token Refresh
+    URL: http://localhost:8000/api/token/refresh/
+    Method: POST
+    Body (JSON):
+        {
+            "refresh": "your-refresh-token"
+        }
+
+# View Student Info (For Students)
+    URL: http://localhost:8000/api/student-info/
+    Method: GET
+    Headers:
+        Authorization: Bearer <your-student-token>
+
+# View Student Result (For Students)
+    URL: http://localhost:8000/api/student-result/
+    Method: GET
+    Headers:
+        Authorization: Bearer <your-student-token>
+
+# View Student Attendance (For Students)
+    URL: http://localhost:8000/api/student-attendance/
+    Method: GET
+    Headers:
+        Authorization: Bearer <your-student-token>
+
+# View Student Salary (For Students)
+    URL: http://localhost:8000/api/student-salary/
+    Method: GET
+    Headers:
+        Authorization: Bearer <your-student-token>
+
+# View All Teachers (For Students)
+    URL: http://localhost:8000/api/teacher-list/
+    Method: GET
+    Headers:
+        Authorization: Bearer <your-student-token>
+
+# View All Notices (For Students)
+    URL: http://localhost:8000/api/notices/
+    Method: GET
+    Headers:
+        Authorization: Bearer <your-student-token>
+
+# View Notes for Student's Grade
+
+    URL: http://localhost:8000/api/notes/
+    Method: GET
+    Headers:
+        Authorization: Bearer <your-student-token>
+
+# View Lectures for Student's Grade
+
+    URL: http://localhost:8000/api/lectures/
+    Method: GET
+    Headers:
+        Authorization: Bearer <your-student-token>
+
+# View Routines for Student's Grade
+
+    URL: http://localhost:8000/api/routines/
+    Method: GET
+    Headers:
+        Authorization: Bearer <your-student-token>
+
+
