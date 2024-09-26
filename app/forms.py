@@ -65,18 +65,6 @@ class NoteForm(forms.ModelForm):
             'grade': 'Class',
         }
 
-# class RoutineForm(forms.ModelForm):
-#     class Meta:
-#         model = Routine
-#         fields = ['grade', 'content', 'url', 'img']
-#         widgets = {
-#             'content': forms.TextInput(),
-#         }
-#         labels = {
-#             'content': 'Title',
-#             'grade': 'Class',
-#             'img': 'Image',
-#         }
 
 class NoticeForm(forms.ModelForm):
     class Meta:
@@ -90,6 +78,9 @@ class ResultForm(forms.ModelForm):
     class Meta:
         model = Result
         fields = ['exam_marks', 'symbol']
+        widgets = {
+            'exam_marks': forms.TextInput(),
+        }
 ResultFormSet = modelformset_factory(Result, form=ResultForm, extra=0)
 
 class ExamForm(forms.ModelForm):

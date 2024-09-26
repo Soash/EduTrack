@@ -29,7 +29,7 @@
                 <td>{{ info.student.roll }}</td>
                 <td>{{ info.exam_marks }}</td>
                 <td>{{ info.position }}</td>
-                <td>{{ info.symbol }}</td>
+                <td>{{ info.symbol|default:"" }}</td>
             </tr>
             {% endfor %}
         </tbody>

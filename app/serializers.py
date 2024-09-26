@@ -84,9 +84,12 @@ class ExamSerializer(serializers.ModelSerializer):
 class ResultSerializer(serializers.ModelSerializer):
     exam = ExamSerializer()
     student = StudentSerializer()
+    highest_exam_marks = serializers.IntegerField()
+
     class Meta:
         model = Result
-        fields = ['id', 'exam', 'student', 'exam_marks', 'position', 'symbol']
+        fields = ['id', 'exam', 'student', 'exam_marks', 'position', 'symbol', 'highest_exam_marks']
+
 
 class AttendanceRecordSerializer(serializers.ModelSerializer):
     student = StudentSerializer()
