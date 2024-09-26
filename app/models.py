@@ -137,14 +137,14 @@ class Exam(models.Model):
         return f"{self.name} - {self.grade} - {self.subject} ({self.date})"
 
 class Result(models.Model):
-    # SYMBOL_CHOICES = [
-    #     ('circle', 'Circle'),
-    #     ('triangle', 'Triangle'),
-    #     ('square', 'Square'),
-    # ]
     SYMBOL_CHOICES = [
-        ('pass', 'Pass'),
-        ('fail', 'Fail'),
+        ('A+', 'A+'),
+        ('A', 'A'),
+        ('A-', 'A-'),
+        ('B', 'B'),
+        ('C', 'C'),
+        ('D', 'D'),
+        ('F', 'F'),
     ]
 
     exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='results')
