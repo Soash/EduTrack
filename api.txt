@@ -85,3 +85,25 @@
         Authorization: Bearer <your-student-token>
 
 
+# Logout
+
+    URL: http://localhost:8000/api/logout/
+    Method: POST
+    Headers:
+        Authorization: Bearer <your-access-token>
+    Body (JSON):
+        {
+            "refresh": "<your-refresh-token>"
+        }
+
+# Update FCM
+
+    URL: http://localhost:8000/api/update-fcm-token/
+    Method: POST
+    Headers:
+        Authorization: Bearer <your-student-token>
+    Body (JSON):
+        {
+        "fcm_token": "your_fcm_token_here"
+        }
+        

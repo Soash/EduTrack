@@ -4,7 +4,7 @@ from datetime import datetime
 from .forms import CustomPasswordChangeForm, ExamForm, LectureForm, NoteForm, NoticeForm, PeriodForm, SubjectForm
 from .forms import StudentForm, TeacherForm, TeacherProfileForm, LectureForm, ResultForm, ResultFormSet
 from .models import AttendanceRecord, CustomUser, Exam, Lectures, MonthlySalary, Notes, Notice, Period, Result, Routine, StudentClass, Subject, Teacher, Student, Lectures
-from .serializers import AttendanceRecordSerializer, CustomUserSerializer, LecturesSerializer, MonthlySalarySerializer, NotesSerializer, RoutineSerializer 
+from .serializers import AttendanceRecordSerializer, CustomUserSerializer, FCMTokenSerializer, LecturesSerializer, MonthlySalarySerializer, NotesSerializer, RoutineSerializer 
 from .serializers import NoticeSerializer, ResultSerializer, StudentCreateSerializer, TeacherSerializer, StudentSerializer
 
 from django.db import transaction
@@ -172,6 +172,25 @@ class StudentSalaryView(APIView):
 
         except Student.DoesNotExist:
             return Response({"error": "Student not found for the logged-in user"}, status=404)
+
+
+class UpdateFCMTokenView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+
+    def post(self, request):
+        try:
+            # Fetch the student's instance for the authenticated user
+            student = Student.objects.get(user=request.user)
+        except Student.DoesNotExist:
+            return Response({"error": "Student not found"}, status=404)
+
+        # Use the serializer to update the fcm_token field
+        serializer = FCMTokenSerializer(student, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "FCM token updated successfully"})
+        return Response(serializer.errors, status=400)
 
 ############################################################################################################
 ############################################################################################################

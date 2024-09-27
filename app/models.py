@@ -27,6 +27,7 @@ class Student(models.Model):
     grade = models.CharField(max_length=50)
     img = models.ImageField(upload_to='student_images/', blank=True, null=True)
     added_by = models.ForeignKey(CustomUser, related_name='students_added', on_delete=models.SET_NULL, null=True, blank=True)
+    fcm_token = models.CharField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} ({self.roll})"

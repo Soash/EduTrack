@@ -72,10 +72,6 @@ class RoutineSerializer(serializers.ModelSerializer):
             return obj.period.end_time
         return None
     
-
-
-
-
 class ExamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Exam
@@ -89,7 +85,6 @@ class ResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = Result
         fields = ['id', 'exam', 'student', 'exam_marks', 'position', 'symbol', 'highest_exam_marks']
-
 
 class AttendanceRecordSerializer(serializers.ModelSerializer):
     student = StudentSerializer()
@@ -134,3 +129,7 @@ class StudentCreateSerializer(serializers.ModelSerializer):
 
         return student
 
+class FCMTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = ['fcm_token']
