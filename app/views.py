@@ -27,6 +27,16 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db.models import Max
 from rest_framework_simplejwt.tokens import RefreshToken
  
+import firebase_admin
+from firebase_admin import messaging
+from django.conf import settings
+
+BASE_DIR = settings.BASE_DIR
+
+cred = firebase_admin.credentials.Certificate(BASE_DIR/'app/info.json')
+firebase_admin.initialize_app(cred)
+
+ 
 class StudentLogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -532,7 +542,20 @@ def manage_notice(request):
     if request.method == 'POST':
         form = NoticeForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            data = form.save()
+            
+            print(data.date)
+            print(data.content)
+            students = Student.objects.all()
+            for student in students:
+                if student.fcm_token:
+                    message = messaging.Message(
+                        notification=messaging.Notification(
+                            title="সমীকরণ শিক্ষা পরিবার",
+                            body=f"{data.date}\n{data.content}",),
+                        token= student.token)
+                    response = messaging.send(message)
+                    print('Message sent:', response)
             return redirect('manage_notice')
     else:
         form = NoticeForm()
