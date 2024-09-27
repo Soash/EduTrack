@@ -104,6 +104,6 @@
         Authorization: Bearer <your-student-token>
     Body (JSON):
         {
-        "fcm_token": "your_fcm_token_here"
+            "fcm_token": "your_fcm_token_here"
         }
         
