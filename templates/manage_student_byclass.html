@@ -68,7 +68,7 @@
                         data-student-phone="{{ student.phone }}">
                     Edit</button>
 
-                    <form method="post" action="{% url 'delete_student' student.id %}" style="display:inline;">
+                    <form method="post" action="{% url 'delete_student' student.id %}?next={{ request.get_full_path }}" style="display:inline;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-danger">Delete</button>
                     </form>

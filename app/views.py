@@ -992,7 +992,9 @@ def all_student(request):
 def delete_student(request, id):
     student = get_object_or_404(Student, id=id)
     student.delete()
-    return redirect('manage_student')
+    
+    next_url = request.GET.get('next', 'manage_student')
+    return redirect(next_url)
 
 @login_required(login_url='login')
 @user_passes_test(lambda u: u.is_staff)
