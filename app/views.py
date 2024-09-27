@@ -553,7 +553,7 @@ def manage_notice(request):
                         notification=messaging.Notification(
                             title="সমীকরণ শিক্ষা পরিবার",
                             body=f"{data.date}\n{data.content}",),
-                        token= student.token)
+                        token= student.fcm_token)
                     response = messaging.send(message)
                     print('Message sent:', response)
             return redirect('manage_notice')
