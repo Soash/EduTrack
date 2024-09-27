@@ -277,8 +277,19 @@ def attendance_record(request):
                     AttendanceRecord.objects.create(
                         student=student,
                         date=attendance_date,
-                        status='present'  # Default status is absent
+                        status='present'
                     )
+            
+            for student in students:
+                if student.fcm_token:
+                    message = messaging.Message(
+                        notification=messaging.Notification(
+                            title="সমীকরণ শিক্ষা পরিবার",
+                            body=f"উপস্থিতি - কোচিং এ আপনার সন্তানের উপস্থিতি দেখুন।",
+                            image="https://i.ibb.co.com/n6GmLVJ/logo.jpg"),
+                        token = student.fcm_token)
+                    response = messaging.send(message)
+                    print('Message sent:', response)
 
             # Fetch all attendance records for the date to show in the template
             attendance_records = AttendanceRecord.objects.filter(date=attendance_date)
@@ -309,6 +320,16 @@ def mark_attendance(request, status, id):
             date=date,
             defaults={'status': status}
         )
+
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title="সমীকরণ শিক্ষা পরিবার",
+                body=f"উপস্থিতি - কোচিং এ আপনার সন্তানের উপস্থিতি দেখুন।",),
+                image="https://i.ibb.co.com/n6GmLVJ/logo.jpg",
+            token= student.fcm_token)
+        response = messaging.send(message)
+        print('Message sent:', response)
+                    
         return JsonResponse({'success': True, 'status': status})
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
 
@@ -552,7 +573,8 @@ def manage_notice(request):
                     message = messaging.Message(
                         notification=messaging.Notification(
                             title="সমীকরণ শিক্ষা পরিবার",
-                            body=f"{data.date}\n{data.content}",),
+                            body=f"নোটিশ - কোচিং এর গুরুত্বপূর্ণ নোটিশ দেখুন।",
+                            image="https://i.ibb.co.com/n6GmLVJ/logo.jpg",),
                         token= student.fcm_token)
                     response = messaging.send(message)
                     print('Message sent:', response)
@@ -639,6 +661,18 @@ def update_exam_results(request, exam_id):
                 
                 # Increment position for the next student
                 position += 1
+                
+                students = Student.objects.filter(grade=exam.grade)
+                for student in students:
+                    if student.fcm_token:
+                        message = messaging.Message(
+                            notification=messaging.Notification(
+                                title="সমীকরণ শিক্ষা পরিবার",
+                                body=f"ফলাফল - আজকের পরীক্ষার ফলাফল দেখুন।",
+                                image="https://i.ibb.co.com/n6GmLVJ/logo.jpg"),
+                            token = student.fcm_token)
+                        response = messaging.send(message)
+                        print('Message sent:', response)
 
             return redirect('update_exam_results', exam_id=exam_id)
         else:
@@ -882,7 +916,6 @@ def manage_student(request):
 
     return render(request, 'manage_student.html', {'form': form, 'unique_grades': unique_grades})
 
-
 @login_required(login_url='teacher_login') 
 @user_passes_test(lambda user: user.is_staff)
 def manage_student_byclass(request, grade):
@@ -894,7 +927,6 @@ def manage_student_byclass(request, grade):
 def all_student(request):
     students = Student.objects.all()
     return render(request, 'all_student.html', {'students': students})
-
 
 @login_required(login_url='login')
 @user_passes_test(lambda u: u.is_staff)
@@ -1007,6 +1039,17 @@ def generate_salary(request):
                 salary_records.append(
                     MonthlySalary(student=student, date=current_date, status='unpaid')
                 )
+            if student.fcm_token:
+                message = messaging.Message(
+                    notification=messaging.Notification(
+                        title="সমীকরণ শিক্ষা পরিবার",
+                        body=f"নোটিশ - বেতন পরিশোধ করুন।",
+                        image="https://i.ibb.co.com/n6GmLVJ/logo.jpg",),
+                    token= student.fcm_token)
+                response = messaging.send(message)
+                print('Message sent:', response)
+                
+            
 
         if salary_records:
             MonthlySalary.objects.bulk_create(salary_records)
@@ -1016,26 +1059,7 @@ def generate_salary(request):
 
         return redirect('generate_salary')
 
-    # Handle toggling of status
-    # if request.method == 'POST' and 'toggle_status' in request.POST:
-    #     salary_id = request.POST.get('salary_id')
-    #     salary = get_object_or_404(MonthlySalary, id=salary_id)
-    #     if salary.status == 'paid':
-    #         salary.status = 'unpaid'
-    #     else:
-    #         salary.status = 'paid'
-    #     salary.save()
-    #     return redirect('generate_salary')
-    
-    # if request.method == 'POST' and 'delete_salary' in request.POST:
-    #     salary_id = request.POST.get('delete_salary_id')
-    #     salary = get_object_or_404(MonthlySalary, id=salary_id)
-    #     salary.delete()
-    #     messages.success(request, 'Salary record deleted successfully.')
-    #     return redirect('generate_salary')
 
-
-    # Get all salary records for the current month to display in the template
     monthly_salaries = MonthlySalary.objects.filter()
 
     return render(request, 'manage_salary.html', {
@@ -1043,7 +1067,6 @@ def generate_salary(request):
         'current_month': current_month,
         'current_year': current_year,
     })
-
 
 def toggle_salary_status(request):
     if request.method == 'POST':
@@ -1155,7 +1178,6 @@ def edit_period_ajax(request):
         else:
             return JsonResponse({'success': False, 'error': 'Not an AJAX request'})
     return JsonResponse({'success': False, 'error': 'Invalid request'})
-
 
 def manage_subject(request):
     subject = Subject.objects.all()
