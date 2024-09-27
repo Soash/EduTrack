@@ -183,7 +183,6 @@ class StudentSalaryView(APIView):
         except Student.DoesNotExist:
             return Response({"error": "Student not found for the logged-in user"}, status=404)
 
-
 class UpdateFCMTokenView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
 
@@ -288,8 +287,13 @@ def attendance_record(request):
                             body=f"উপস্থিতি - কোচিং এ আপনার সন্তানের উপস্থিতি দেখুন।",
                             image="https://i.ibb.co.com/n6GmLVJ/logo.jpg"),
                         token = student.fcm_token)
-                    response = messaging.send(message)
-                    print('Message sent:', response)
+                    try:
+                        response = messaging.send(message)
+                        print('Message sent:', response)
+                    except messaging.UnregisteredError:
+                        print(f"FCM token for student {student.name} is no longer valid. Removing token.")
+                        student.fcm_token = None
+                        student.save()
 
             # Fetch all attendance records for the date to show in the template
             attendance_records = AttendanceRecord.objects.filter(date=attendance_date)
@@ -327,8 +331,14 @@ def mark_attendance(request, status, id):
                 body=f"উপস্থিতি - কোচিং এ আপনার সন্তানের উপস্থিতি দেখুন।",),
                 image="https://i.ibb.co.com/n6GmLVJ/logo.jpg",
             token= student.fcm_token)
-        response = messaging.send(message)
-        print('Message sent:', response)
+        
+        try:
+            response = messaging.send(message)
+            print('Message sent:', response)
+        except messaging.UnregisteredError:
+            print(f"FCM token for student {student.name} is no longer valid. Removing token.")
+            student.fcm_token = None
+            student.save()
                     
         return JsonResponse({'success': True, 'status': status})
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
@@ -349,6 +359,25 @@ def manage_lecture(request):
             data = form.save(commit=False)
             data.added_by = request.user
             data.save()
+            
+            students = Student.objects.filter(grade=data.grade)
+            for student in students:
+                if student.fcm_token:
+                    message = messaging.Message(
+                        notification=messaging.Notification(
+                            title="সমীকরণ শিক্ষা পরিবার",
+                            body=f"লেকচার - নতুন লেকচার সংযুক্ত করা হয়েছে।",
+                            image="https://i.ibb.co.com/n6GmLVJ/logo.jpg"),
+                        token= student.fcm_token)
+                    
+                    try:
+                        response = messaging.send(message)
+                        print('Message sent:', response)
+                    except messaging.UnregisteredError:
+                        print(f"FCM token for student {student.name} is no longer valid. Removing token.")
+                        student.fcm_token = None
+                        student.save()
+                        
             return redirect('manage_lecture')
     else:
         form = LectureForm()
@@ -411,6 +440,25 @@ def manage_note(request):
             data = form.save(commit=False)
             data.added_by = request.user
             data.save()
+            
+            students = Student.objects.filter(grade=data.grade)
+            for student in students:
+                if student.fcm_token:
+                    message = messaging.Message(
+                        notification=messaging.Notification(
+                            title="সমীকরণ শিক্ষা পরিবার",
+                            body=f"নোট - নতুন নোট সংযুক্ত করা হয়েছে।",
+                            image="https://i.ibb.co.com/n6GmLVJ/logo.jpg"),
+                        token= student.fcm_token)
+                    
+                    try:
+                        response = messaging.send(message)
+                        print('Message sent:', response)
+                    except messaging.UnregisteredError:
+                        print(f"FCM token for student {student.name} is no longer valid. Removing token.")
+                        student.fcm_token = None
+                        student.save()
+
             return redirect('manage_note')
     else:
         form = NoteForm()
@@ -565,8 +613,6 @@ def manage_notice(request):
         if form.is_valid():
             data = form.save()
             
-            print(data.date)
-            print(data.content)
             students = Student.objects.all()
             for student in students:
                 if student.fcm_token:
@@ -574,10 +620,18 @@ def manage_notice(request):
                         notification=messaging.Notification(
                             title="সমীকরণ শিক্ষা পরিবার",
                             body=f"নোটিশ - কোচিং এর গুরুত্বপূর্ণ নোটিশ দেখুন।",
-                            image="https://i.ibb.co.com/n6GmLVJ/logo.jpg",),
+                            image="https://i.ibb.co.com/n6GmLVJ/logo.jpg"),
                         token= student.fcm_token)
-                    response = messaging.send(message)
-                    print('Message sent:', response)
+                    
+                    try:
+                        response = messaging.send(message)
+                        print('Message sent:', response)
+                    except messaging.UnregisteredError:
+                        print(f"FCM token for student {student.name} is no longer valid. Removing token.")
+                        student.fcm_token = None
+                        student.save()
+
+                    
             return redirect('manage_notice')
     else:
         form = NoticeForm()
@@ -671,8 +725,13 @@ def update_exam_results(request, exam_id):
                                 body=f"ফলাফল - আজকের পরীক্ষার ফলাফল দেখুন।",
                                 image="https://i.ibb.co.com/n6GmLVJ/logo.jpg"),
                             token = student.fcm_token)
+                    try:
                         response = messaging.send(message)
                         print('Message sent:', response)
+                    except messaging.UnregisteredError:
+                        print(f"FCM token for student {student.name} is no longer valid. Removing token.")
+                        student.fcm_token = None
+                        student.save()
 
             return redirect('update_exam_results', exam_id=exam_id)
         else:
@@ -1046,8 +1105,14 @@ def generate_salary(request):
                         body=f"নোটিশ - বেতন পরিশোধ করুন।",
                         image="https://i.ibb.co.com/n6GmLVJ/logo.jpg",),
                     token= student.fcm_token)
-                response = messaging.send(message)
-                print('Message sent:', response)
+                
+                try:
+                    response = messaging.send(message)
+                    print('Message sent:', response)
+                except messaging.UnregisteredError:
+                    print(f"FCM token for student {student.name} is no longer valid. Removing token.")
+                    student.fcm_token = None
+                    student.save()
                 
             
 
