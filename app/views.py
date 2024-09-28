@@ -325,20 +325,21 @@ def mark_attendance(request, status, id):
             defaults={'status': status}
         )
 
-        message = messaging.Message(
-            notification=messaging.Notification(
-                title="সমীকরণ শিক্ষা পরিবার",
-                body=f"উপস্থিতি - কোচিং এ আপনার সন্তানের উপস্থিতি দেখুন।",),
-                image="https://i.ibb.co.com/n6GmLVJ/logo.jpg",
-            token= student.fcm_token)
-        
-        try:
-            response = messaging.send(message)
-            print('Message sent:', response)
-        except messaging.UnregisteredError:
-            print(f"FCM token for student {student.name} is no longer valid. Removing token.")
-            student.fcm_token = None
-            student.save()
+        if student.fcm_token:
+            message = messaging.Message(
+                notification=messaging.Notification(
+                    title="সমীকরণ শিক্ষা পরিবার",
+                    body=f"উপস্থিতি - কোচিং এ আপনার সন্তানের উপস্থিতি দেখুন।",
+                    image="https://i.ibb.co.com/n6GmLVJ/logo.jpg"),
+                token= student.fcm_token)
+            
+            try:
+                response = messaging.send(message)
+                print('Message sent:', response)
+            except messaging.UnregisteredError:
+                print(f"FCM token for student {student.name} is no longer valid. Removing token.")
+                student.fcm_token = None
+                student.save()
                     
         return JsonResponse({'success': True, 'status': status})
     return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
@@ -725,13 +726,13 @@ def update_exam_results(request, exam_id):
                                 body=f"ফলাফল - আজকের পরীক্ষার ফলাফল দেখুন।",
                                 image="https://i.ibb.co.com/n6GmLVJ/logo.jpg"),
                             token = student.fcm_token)
-                    try:
-                        response = messaging.send(message)
-                        print('Message sent:', response)
-                    except messaging.UnregisteredError:
-                        print(f"FCM token for student {student.name} is no longer valid. Removing token.")
-                        student.fcm_token = None
-                        student.save()
+                        try:
+                            response = messaging.send(message)
+                            print('Message sent:', response)
+                        except messaging.UnregisteredError:
+                            print(f"FCM token for student {student.name} is no longer valid. Removing token.")
+                            student.fcm_token = None
+                            student.save()
 
             return redirect('update_exam_results', exam_id=exam_id)
         else:

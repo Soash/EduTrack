@@ -58,27 +58,27 @@ class AttendanceRecord(models.Model):
     STATUS_CHOICES = (
         ('present', 'Present'),
         ('absent', 'Absent'),
-        ('vacation', 'Vacation'),
-        ('weekend', 'Weekend'),
+        # ('vacation', 'Vacation'),
+        # ('weekend', 'Weekend'),
     )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
 
-    def save(self, *args, **kwargs):
-        # Automatically mark weekends
-        if self.date.weekday() in (4, 5):  # Friday (4) and Saturday (5)
-            self.status = 'weekend'
-        super().save(*args, **kwargs)
+#     def save(self, *args, **kwargs):
+#         # Automatically mark weekends
+#         if self.date.weekday() in (4, 5):  # Friday (4) and Saturday (5)
+#             self.status = 'weekend'
+#         super().save(*args, **kwargs)
 
-    def __str__(self):
-        return f"{self.student.name} - {self.date} - {self.get_status_display()}"
+#     def __str__(self):
+#         return f"{self.student.name} - {self.date} - {self.get_status_display()}"
 
-class Vacation(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    start_date = models.DateField()
-    end_date = models.DateField()
+# class Vacation(models.Model):
+#     student = models.ForeignKey(Student, on_delete=models.CASCADE)
+#     start_date = models.DateField()
+#     end_date = models.DateField()
 
-    def __str__(self):
-        return f"Vacation for {self.student.name} from {self.start_date} to {self.end_date}"
+#     def __str__(self):
+#         return f"Vacation for {self.student.name} from {self.start_date} to {self.end_date}"
     
 class MonthlySalary(models.Model):
     STATUS_CHOICES = [
